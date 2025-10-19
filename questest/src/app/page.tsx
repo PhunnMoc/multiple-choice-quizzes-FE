@@ -1,13 +1,25 @@
 'use client';
 
 import React from 'react';
-import { QuizProvider } from '@/context/QuizContext';
-import { QuizWaitingRoom } from '@/components/quiz/QuizWaitingRoom';
+import { Header } from '@/components/layout/Header';
+import { HomePage } from '@/components/pages/HomePage';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+
+function MainContent() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main className="pt-16">
+        <HomePage />
+      </main>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <QuizProvider>
-      <QuizWaitingRoom quizId="sample-quiz-123" />
-    </QuizProvider>
+    <AuthGuard>
+      <MainContent />
+    </AuthGuard>
   );
 }
