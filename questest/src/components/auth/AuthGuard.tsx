@@ -10,7 +10,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, refreshAuth } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
@@ -21,14 +21,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [isLoading, isAuthenticated]);
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = async () => {
     setShowLogin(false);
     setShowSignup(false);
+    // Refresh authentication state to ensure it's up to date
+    await refreshAuth();
   };
 
-  const handleSignupSuccess = () => {
+  const handleSignupSuccess = async () => {
     setShowLogin(false);
     setShowSignup(false);
+    // Refresh authentication state to ensure it's up to date
+    await refreshAuth();
   };
 
   const openLogin = () => {
@@ -53,7 +57,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
           <div className="text-white text-xl">Loading...</div>

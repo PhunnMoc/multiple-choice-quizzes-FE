@@ -22,7 +22,7 @@ export function AnswerOptions({
   useEffect(() => {
     if (timeRemaining === 0 && !isAnswered) {
       // Auto-submit if time runs out
-      onAnswerSelect('', question.timeLimit);
+      onAnswerSelect('', question.timeLimit || 30);
     }
   }, [timeRemaining, isAnswered, onAnswerSelect, question.timeLimit]);
 

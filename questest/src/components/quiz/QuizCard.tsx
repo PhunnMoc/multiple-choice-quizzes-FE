@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Quiz } from '@/types/quiz';
+import { Button } from '../ui/Button';
 
 interface QuizCardProps {
   quiz: Quiz;
@@ -29,16 +30,8 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
               {quiz.title}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
-              by <span className="font-semibold text-blue-600">{quiz.authorName || 'Anonymous'}</span>
+              by <span className="font-semibold text-black">{quiz.authorName || 'Anonymous'}</span>
             </p>
-          </div>
-          <div className="ml-4 flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-lg font-bold">
-                {quiz.questions?.length || 0}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-1">Questions</p>
           </div>
         </div>
 
@@ -59,31 +52,35 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
             </span>
           </div>
           <span className="text-gray-500">
-            {formatDate(quiz.createdAt || new Date().toISOString())}
+            {formatDate(typeof quiz.createdAt === 'string' ? quiz.createdAt : new Date().toISOString())}
           </span>
         </div>
 
         {/* Quiz Description */}
-        {quiz.description && (
+        {quiz.authorName && (
           <p className="text-gray-700 text-sm mb-4 line-clamp-2">
-            {quiz.description}
+            {quiz.authorName}
           </p>
         )}
 
         {/* Action Buttons */}
         <div className="flex space-x-3">
-          <button
-            onClick={() => onJoinQuiz(quiz.id)}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
+          <Button
+            variant="primary"
+            size="full"
+            onClick={() => onJoinQuiz(quiz._id)}
+            className="flex-1"
           >
             Join Quiz
-          </button>
-          <button
-            onClick={() => onViewDetails(quiz.id)}
-            className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors duration-200"
+          </Button>
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={() => onViewDetails(quiz._id)}
+            className="px-4 font-medium"
           >
             Details
-          </button>
+          </Button>
         </div>
       </div>
     </div>

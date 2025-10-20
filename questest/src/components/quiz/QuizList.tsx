@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '@/lib/api';
 import { QuizCard } from './QuizCard';
 import { Quiz } from '@/types/quiz';
+import { SearchBar } from '@/components/ui/SearchBar';
 
 interface QuizListProps {
   onJoinQuiz: (quizId: string) => void;
@@ -34,7 +35,7 @@ export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
         search: searchTerm || undefined
       });
 
-      if (response.success) {
+      if (response.success && response.data) {
         setQuizzes(response.data.quizzes);
       } else {
         setError('Failed to load quizzes');
@@ -55,8 +56,8 @@ export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, sortBy]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -100,20 +101,11 @@ export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search quizzes by title or author..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
+            <SearchBar
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search quizzes by title or author..."
+            />
           </div>
           <div className="sm:w-48">
             <select
@@ -146,7 +138,7 @@ export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quizzes.map((quiz) => (
             <QuizCard
-              key={quiz.id}
+              key={quiz._id}
               quiz={quiz}
               onJoinQuiz={onJoinQuiz}
               onViewDetails={onViewDetails}

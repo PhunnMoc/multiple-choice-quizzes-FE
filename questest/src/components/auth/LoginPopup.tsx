@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { authService } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/Button';
+import { H2, Subtle } from '@/components/ui/Typography';
 
 interface LoginPopupProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ export function LoginPopup({ isOpen, onClose, onSuccess, onSwitchToSignup }: Log
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +25,9 @@ export function LoginPopup({ isOpen, onClose, onSuccess, onSwitchToSignup }: Log
     setError('');
 
     try {
-      const response = await authService.login(email, password);
+      const success = await login(email, password);
       
-      if (response.success) {
+      if (success) {
         onSuccess();
         onClose();
         // Reset form
@@ -32,7 +35,7 @@ export function LoginPopup({ isOpen, onClose, onSuccess, onSwitchToSignup }: Log
         setPassword('');
         setError('');
       } else {
-        setError(response.message || 'Login failed');
+        setError('Invalid email or password');
       }
     } catch (err) {
       setError('An error occurred during login');
@@ -65,12 +68,8 @@ export function LoginPopup({ isOpen, onClose, onSuccess, onSwitchToSignup }: Log
         </button>
 
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
-            🔐 Login
-          </h2>
-          <p className="text-gray-600">
-            Sign in to create and host quiz rooms
-          </p>
+          <H2 className="mb-2">🔐 Login</H2>
+          <Subtle>Sign in to create and host quiz rooms</Subtle>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -110,28 +109,17 @@ export function LoginPopup({ isOpen, onClose, onSuccess, onSwitchToSignup }: Log
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 ${
-              isLoading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white'
-            }`}
-          >
-            {isLoading ? 'Signing In...' : 'Sign In'}
-          </button>
+          <Button type="submit" isLoading={isLoading} size="full">
+            Sign In
+          </Button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             Don't have an account?{' '}
-            <button
-              onClick={onSwitchToSignup}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
+            <Button onClick={onSwitchToSignup} variant="ghost" className="font-medium">
               Sign up here
-            </button>
+            </Button>
           </p>
         </div>
       </div>

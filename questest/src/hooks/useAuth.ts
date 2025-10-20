@@ -11,32 +11,37 @@ interface UseAuthReturn {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  refreshAuth: () => Promise<void>;
 }
 
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const checkAuth = async () => {
+    if (authService.isAuthenticated()) {
+      try {
+        const response = await authService.getProfile();
+        if (response.success) {
+          setUser(response.data.user);
+        } else {
+          // Token is invalid, clear it
+          authService.logout();
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        authService.logout();
+        setUser(null);
+      }
+    } else {
+      setUser(null);
+    }
+    setIsLoading(false);
+  };
+
   useEffect(() => {
     // Check if user is already authenticated on mount
-    const checkAuth = async () => {
-      if (authService.isAuthenticated()) {
-        try {
-          const response = await authService.getProfile();
-          if (response.success) {
-            setUser(response.data.user);
-          } else {
-            // Token is invalid, clear it
-            authService.logout();
-          }
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          authService.logout();
-        }
-      }
-      setIsLoading(false);
-    };
-
     checkAuth();
   }, []);
 
@@ -73,6 +78,11 @@ export function useAuth(): UseAuthReturn {
     setUser(null);
   };
 
+  const refreshAuth = async () => {
+    setIsLoading(true);
+    await checkAuth();
+  };
+
   return {
     user,
     isAuthenticated: !!user,
@@ -80,5 +90,6 @@ export function useAuth(): UseAuthReturn {
     login,
     signup,
     logout,
+    refreshAuth,
   };
 }

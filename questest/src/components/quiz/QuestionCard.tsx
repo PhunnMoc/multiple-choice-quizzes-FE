@@ -41,7 +41,7 @@ export function QuestionCard({
       {/* Question Text */}
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-800 leading-tight">
-          {question.text}
+          {question.questionText}
         </h2>
       </div>
 
@@ -49,7 +49,7 @@ export function QuestionCard({
       <div className="grid grid-cols-2 gap-4">
         {question.options.map((option) => (
           <button
-            key={option.id}
+            key={option}
             className={`
               p-6 rounded-xl text-white font-bold text-lg
               transition-all duration-200 hover:scale-105 hover:shadow-lg
@@ -58,9 +58,9 @@ export function QuestionCard({
           >
             <div className="flex items-center justify-center space-x-3">
               <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center">
-                {option.id.toUpperCase()}
+                {option.toUpperCase()}
               </div>
-              <span>{option.text}</span>
+              <span>{option}</span>
             </div>
           </button>
         ))}

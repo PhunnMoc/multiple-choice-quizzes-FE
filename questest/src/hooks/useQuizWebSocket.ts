@@ -53,7 +53,7 @@ interface UseQuizWebSocketReturn {
 }
 
 export function useQuizWebSocket(
-  serverUrl: string = 'http://localhost:3001', // Backend runs on port 3001
+  serverUrl: string = 'http://localhost:3000', // Backend runs on port 3000
   callbacks: UseQuizWebSocketProps = {}
 ): UseQuizWebSocketReturn {
   const { socket, isConnected, connectionState, error, connect, disconnect } = useWebSocket({

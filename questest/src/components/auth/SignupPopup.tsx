@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { authService } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SignupPopupProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export function SignupPopup({ isOpen, onClose, onSuccess, onSwitchToLogin }: Sig
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +49,9 @@ export function SignupPopup({ isOpen, onClose, onSuccess, onSwitchToLogin }: Sig
     }
 
     try {
-      const response = await authService.signup(name, email, password);
+      const success = await signup(name, email, password);
       
-      if (response.success) {
+      if (success) {
         onSuccess();
         onClose();
         // Reset form
@@ -60,7 +61,7 @@ export function SignupPopup({ isOpen, onClose, onSuccess, onSwitchToLogin }: Sig
         setConfirmPassword('');
         setError('');
       } else {
-        setError(response.message || 'Signup failed');
+        setError('Signup failed. Email might already be in use.');
       }
     } catch (err) {
       setError('An error occurred during signup');
@@ -177,7 +178,7 @@ export function SignupPopup({ isOpen, onClose, onSuccess, onSwitchToLogin }: Sig
             className={`w-full font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 ${
               isLoading
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white'
+                : 'hover:from-green-600 hover:to-blue-700 text-white'
             }`}
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}

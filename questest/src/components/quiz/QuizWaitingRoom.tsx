@@ -10,6 +10,7 @@ interface QuizWaitingRoomProps {
 export function QuizWaitingRoom({ quizId }: QuizWaitingRoomProps) {
   const { state, joinQuiz, createQuiz, startQuiz } = useQuiz();
   const [playerName, setPlayerName] = useState('');
+  const [roomCode, setRoomCode] = useState('');
   const [hasJoined, setHasJoined] = useState(false);
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
 
@@ -19,10 +20,12 @@ export function QuizWaitingRoom({ quizId }: QuizWaitingRoomProps) {
       if (isCreatingQuiz) {
         createQuiz(quizId); // Create room with quiz ID
       } else {
-        // For joining, we need a room code - for now, let's use a placeholder
-        // In a real app, the user would enter a room code
-        const roomCode = prompt('Enter room code:') || 'TEST123';
-        joinQuiz(roomCode, playerName.trim());
+        // For joining, we need a room code
+        if (!roomCode.trim()) {
+          alert('Please enter a room code');
+          return;
+        }
+        joinQuiz(roomCode.trim(), playerName.trim());
       }
       setHasJoined(true);
     }
@@ -81,6 +84,26 @@ export function QuizWaitingRoom({ quizId }: QuizWaitingRoomProps) {
                 required
               />
             </div>
+
+            {!isCreatingQuiz && (
+              <div>
+                <label htmlFor="roomCode" className="block text-sm font-medium text-gray-700 mb-2">
+                  Room Code
+                </label>
+                <input
+                  type="text"
+                  id="roomCode"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  placeholder="Enter room code (e.g., ABC123)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  required
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Ask the host for the room code to join their quiz
+                </p>
+              </div>
+            )}
 
             <div className="flex space-x-4">
               <button

@@ -1,5 +1,11 @@
 /* Component-specific styles */
 
+/* Base Text Styles */
+.text-base {
+  font-family: 'Euclid Circular A', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+
 /* Quiz Card Styles */
 .quiz-card {
   @apply bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto;
@@ -14,7 +20,8 @@
 }
 
 .quiz-progress-fill {
-  @apply bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-linear;
+  @apply h-3 rounded-full transition-all duration-1000 ease-linear;
+  background-color: #c3f832;
 }
 
 /* Answer Option Styles */
@@ -89,7 +96,8 @@
 
 /* Button Styles */
 .btn-primary {
-  @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105;
+  @apply font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-900;
+  background-color: #c3f832;
 }
 
 .btn-secondary {
