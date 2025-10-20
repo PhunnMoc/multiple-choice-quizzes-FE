@@ -138,7 +138,7 @@ export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quizzes.map((quiz) => (
             <QuizCard
-              key={quiz._id}
+              key={quiz.id}
               quiz={quiz}
               onJoinQuiz={onJoinQuiz}
               onViewDetails={onViewDetails}

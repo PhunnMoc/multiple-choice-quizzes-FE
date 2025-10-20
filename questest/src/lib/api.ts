@@ -88,6 +88,27 @@ class ApiService {
   }
 
   /**
+   * Update an existing quiz (requires authentication)
+   */
+  async updateQuiz(quizId: string, quizData: {
+    title: string;
+    authorName?: string;
+    questions: Array<{
+      questionText: string;
+      options: string[];
+      correctAnswerIndex: number;
+    }>;
+  }): Promise<ApiResponse<Quiz>> {
+    const response = await fetch(`${API_BASE_URL}/api/quizzes/${quizId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(quizData),
+    });
+
+    return response.json();
+  }
+
+  /**
    * Health check
    */
   async healthCheck(): Promise<ApiResponse> {

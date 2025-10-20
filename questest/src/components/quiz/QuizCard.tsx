@@ -3,6 +3,7 @@
 import React from 'react';
 import { Quiz } from '@/types/quiz';
 import { Button } from '../ui/Button';
+import { useRouter } from 'next/navigation';
 
 interface QuizCardProps {
   quiz: Quiz;
@@ -11,6 +12,8 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
+  const router = useRouter();
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -18,6 +21,10 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleViewDetails = () => {
+    router.push(`/edit/${quiz.id}`);
   };
 
   return (
@@ -68,7 +75,7 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
           <Button
             variant="primary"
             size="full"
-            onClick={() => onJoinQuiz(quiz._id)}
+            onClick={() => onJoinQuiz(quiz.id)}
             className="flex-1"
           >
             Join Quiz
@@ -76,10 +83,10 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
           <Button
             variant="ghost"
             size="md"
-            onClick={() => onViewDetails(quiz._id)}
+            onClick={handleViewDetails}
             className="px-4 font-medium"
           >
-            Details
+            Edit
           </Button>
         </div>
       </div>

@@ -1,0 +1,318 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
+import { H1, H2, H3, Subtle } from '@/components/ui/Typography';
+import { apiService } from '@/lib/api';
+import { Quiz } from '@/types/quiz';
+
+interface Question {
+  questionText: string;
+  options: string[];
+  correctAnswerIndex: number;
+}
+
+export default function EditQuizPage() {
+  const router = useRouter();
+  const params = useParams();
+  const quizId = params.id as string;
+  
+  const [title, setTitle] = useState('');
+  const [authorName, setAuthorName] = useState('');
+  const [questions, setQuestions] = useState<Question[]>([
+    {
+      questionText: '',
+      options: ['', '', '', ''],
+      correctAnswerIndex: 0
+    }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(true);
+  const [error, setError] = useState('');
+
+  // Load existing quiz data
+  useEffect(() => {
+    const loadQuiz = async () => {
+      try {
+        setIsLoadingQuiz(true);
+        const response = await apiService.getQuizWithAnswers(quizId);
+        
+        if (response.success && response.data) {
+          // The API returns { data: { quiz: Quiz } }
+          const quizData = response.data as any;
+          const quiz = quizData.quiz || quizData;
+          console.log('Loaded quiz:', quiz); // Debug log
+          
+          setTitle(quiz.title);
+          setAuthorName(quiz.authorName || '');
+          setQuestions((quiz.questions || []).map((q: any) => ({
+            questionText: q.questionText,
+            options: q.options || ['', '', '', ''],
+            correctAnswerIndex: q.correctAnswerIndex || 0
+          })));
+        } else {
+          console.log('Failed to load quiz:', response); // Debug log
+          setError('Failed to load quiz');
+        }
+      } catch (err) {
+        console.error('Error loading quiz:', err);
+        setError('An error occurred while loading the quiz');
+      } finally {
+        setIsLoadingQuiz(false);
+      }
+    };
+
+    if (quizId) {
+      loadQuiz();
+    }
+  }, [quizId]);
+
+  const addQuestion = () => {
+    setQuestions([...questions, {
+      questionText: '',
+      options: ['', '', '', ''],
+      correctAnswerIndex: 0
+    }]);
+  };
+
+  const removeQuestion = (index: number) => {
+    if (questions.length > 1) {
+      setQuestions(questions.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateQuestion = (index: number, field: keyof Question, value: any) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
+    setQuestions(updatedQuestions);
+  };
+
+  const updateOption = (questionIndex: number, optionIndex: number, value: string) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[questionIndex].options[optionIndex] = value;
+    setQuestions(updatedQuestions);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Validate form
+      if (!title.trim()) {
+        setError('Quiz title is required');
+        return;
+      }
+
+      if (questions.some(q => !q.questionText.trim())) {
+        setError('All questions must have text');
+        return;
+      }
+
+      if (questions.some(q => q.options.some(opt => !opt.trim()))) {
+        setError('All options must be filled');
+        return;
+      }
+
+      const quizData = {
+        title: title.trim(),
+        authorName: authorName.trim() || undefined,
+        questions: questions.map(q => ({
+          questionText: q.questionText.trim(),
+          options: q.options.map(opt => opt.trim()),
+          correctAnswerIndex: q.correctAnswerIndex
+        }))
+      };
+
+      const response = await apiService.updateQuiz(quizId, quizData);
+
+      if (response.success) {
+        router.push('/');
+      } else {
+        setError(response.message || 'Failed to update quiz');
+      }
+    } catch (err) {
+      console.error('Error updating quiz:', err);
+      setError('An error occurred while updating the quiz');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoadingQuiz) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading quiz...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={() => router.back()}
+            className="mb-4"
+          >
+            ← Back
+          </Button>
+          <H1>Edit Quiz</H1>
+          <Subtle>Update your quiz questions and settings</Subtle>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Quiz Info */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <H2 className="mb-4">Quiz Information</H2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quiz Title *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter quiz title"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-[Euclid_Circular_A,Helvetica_Neue,Helvetica,Arial,sans-serif] text-[13px] text-black"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Author Name
+                </label>
+                <input
+                  type="text"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                  placeholder="Enter your name (optional)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-[Euclid_Circular_A,Helvetica_Neue,Helvetica,Arial,sans-serif] text-[13px] text-black"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Questions */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <H2>Questions</H2>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={addQuestion}
+              >
+                + Add Question
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              {questions.map((question, questionIndex) => (
+                <div key={questionIndex} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <H3>Question {questionIndex + 1}</H3>
+                    {questions.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => removeQuestion(questionIndex)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Question Text */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Question Text *
+                    </label>
+                    <textarea
+                      value={question.questionText}
+                      onChange={(e) => updateQuestion(questionIndex, 'questionText', e.target.value)}
+                      placeholder="Enter your question"
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-[Euclid_Circular_A,Helvetica_Neue,Helvetica,Arial,sans-serif] text-[13px] text-black"
+                      required
+                    />
+                  </div>
+
+                  {/* Options */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Answer Options *
+                    </label>
+                    {question.options.map((option, optionIndex) => (
+                      <div key={optionIndex} className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name={`correct-${questionIndex}`}
+                          checked={question.correctAnswerIndex === optionIndex}
+                          onChange={() => updateQuestion(questionIndex, 'correctAnswerIndex', optionIndex)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => updateOption(questionIndex, optionIndex, e.target.value)}
+                          placeholder={`Option ${optionIndex + 1}`}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-[Euclid_Circular_A,Helvetica_Neue,Helvetica,Arial,sans-serif] text-[13px] text-black"
+                          required
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={isLoading}
+            >
+              Update Quiz
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

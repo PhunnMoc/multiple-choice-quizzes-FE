@@ -22,7 +22,7 @@ export interface Player {
 }
 
 export interface Quiz {
-  _id: string; // Backend uses MongoDB _id
+  id: string; // API returns 'id' instead of '_id'
   title: string;
   authorName?: string; // Backend uses authorName instead of description
   creator: string; // Backend uses creator (user ID)
