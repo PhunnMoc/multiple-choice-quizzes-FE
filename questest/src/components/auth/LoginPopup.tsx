@@ -68,7 +68,7 @@ export function LoginPopup({ isOpen, onClose, onSuccess, onSwitchToSignup }: Log
         </button>
 
         <div className="text-center mb-8">
-          <H2 className="mb-2">🔐 Login</H2>
+          <H2 className="mb-2">Login</H2>
           <Subtle>Sign in to create and host quiz rooms</Subtle>
         </div>
 

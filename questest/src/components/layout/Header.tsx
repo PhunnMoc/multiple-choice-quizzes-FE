@@ -52,14 +52,6 @@ export function Header() {
             >
               Create Quiz
             </Button>
-            <Button 
-              variant="secondary" 
-              size="md" 
-              className="ml-2"
-              onClick={handleHistory}
-            >
-              History
-            </Button>
           </div>
 
           {/* Navigation */}

@@ -140,17 +140,6 @@ export function DetailedResults({
           <div className="space-y-6" key={selectedParticipantId}>
             <H3>Question-by-Question Results</H3>
             
-            {/* Debug Info */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <h4 className="font-semibold text-yellow-800 mb-2">Debug Info:</h4>
-              <div className="text-sm text-yellow-700">
-                <p>Selected Participant: {selectedParticipant.name}</p>
-                <p>Total Questions: {questions.length}</p>
-                <p>Total Answers: {selectedParticipant.answers.length}</p>
-                <p>Answers: {JSON.stringify(selectedParticipant.answers.map(a => ({ questionIndex: a.questionIndex, answerIndex: a.answerIndex, isCorrect: a.isCorrect })))}</p>
-              </div>
-            </div>
-            
             {questions.map((question, questionIndex) => {
               const answer = selectedParticipant.answers.find(a => a.questionIndex === questionIndex);
               const isNoAnswer = answer?.answerIndex === -1;
@@ -228,13 +217,7 @@ export function DetailedResults({
                            )}
                          </div>
 
-                  {/* Debug Info */}
-                  {answer && (
-                    <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                      Debug: answerIndex={answer.answerIndex}, correctAnswerIndex={question.correctAnswerIndex}, isCorrect={answer.isCorrect}
-                    </div>
-                  )}
-
+              
                   {/* Answer Details */}
                   {answer && (
                     <div className="mt-4 pt-4 border-t border-gray-200">

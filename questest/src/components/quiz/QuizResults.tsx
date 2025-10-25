@@ -106,7 +106,7 @@ export function QuizResults({ results, onPlayAgain, onBackToHome }: QuizResultsP
             onClick={() => setShowDetailedResults(true)}
             className="px-8 py-3"
           >
-            📊 View Detailed Results
+          View Detailed Results
           </Button>
           {onPlayAgain && (
             <button
