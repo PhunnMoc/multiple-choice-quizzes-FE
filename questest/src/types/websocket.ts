@@ -12,6 +12,7 @@ export interface ClientToServerEvents {
   // Room events
   'create-room': (data: CreateRoomData) => void;
   'join-room': (data: JoinRoomData) => void;
+  'check-room-status': (data: CheckRoomStatusData) => void;
   
   // Game events
   'start-quiz': (data: StartQuizData) => void;
@@ -24,6 +25,8 @@ export interface ServerToClientEvents {
   // Room events
   'room-created': (data: RoomCreatedData) => void;
   'room-joined': (data: RoomJoinedData) => void;
+  'room-cancelled': (data: RoomCancelledData) => void;
+  'room-status': (data: RoomStatusData) => void;
   'participant-joined': (data: ParticipantJoinedData) => void;
   'participant-left': (data: ParticipantLeftData) => void;
   'error': (data: ErrorData) => void;
@@ -45,6 +48,10 @@ export interface JoinRoomData {
   name: string;
 }
 
+export interface CheckRoomStatusData {
+  roomCode: string;
+}
+
 export interface StartQuizData {
   roomCode: string;
 }
@@ -62,6 +69,14 @@ export interface NextQuizData {
 export interface RoomCreatedData {
   roomCode: string;
   message: string;
+  participantCount: number;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+    isReady: boolean;
+  }>;
 }
 
 export interface RoomJoinedData {
@@ -69,16 +84,58 @@ export interface RoomJoinedData {
   message: string;
   quizTitle: string;
   participantCount: number;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+    isReady: boolean;
+  }>;
+  playerId: string;
+  gameSessionId: string;
+}
+
+export interface RoomCancelledData {
+  message: string;
+  roomCode: string;
+}
+
+export interface RoomStatusData {
+  roomCode: string;
+  participantCount: number;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+    isReady: boolean;
+  }>;
+  isActive: boolean;
 }
 
 export interface ParticipantJoinedData {
   name: string;
+  playerId: string;
   participantCount: number;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+    isReady: boolean;
+  }>;
 }
 
 export interface ParticipantLeftData {
   name: string;
   participantCount: number;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+    isReady: boolean;
+  }>;
 }
 
 export interface ErrorData {

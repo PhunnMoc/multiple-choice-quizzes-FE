@@ -78,7 +78,7 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
             onClick={() => onJoinQuiz(quiz.id)}
             className="flex-1"
           >
-            Join Quiz
+            Start Quiz Room
           </Button>
           <Button
             variant="ghost"

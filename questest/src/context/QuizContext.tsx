@@ -1,12 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Quiz, Player, Question, GameState, QuizAnswer } from '@/types/quiz';
 import { SAMPLE_QUESTIONS } from '@/constants/quiz';
 import { useQuizWebSocket } from '@/hooks/useQuizWebSocket';
 import { 
   RoomCreatedData,
   RoomJoinedData,
+  RoomCancelledData,
   ParticipantJoinedData,
   ParticipantLeftData,
   QuizStartedData,
@@ -26,6 +28,19 @@ interface QuizState {
   isHost: boolean;
   isConnected: boolean;
   connectionError: string | null;
+  // Room management fields
+  roomCode: string | null;
+  quizTitle: string | null;
+  hostName: string | null;
+  participantCount: number;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    isConnected: boolean;
+    isReady: boolean;
+  }>;
+  currentQuestion: any | null;
 }
 
 type QuizAction =
@@ -38,6 +53,11 @@ type QuizAction =
   | { type: 'SET_HOST'; payload: boolean }
   | { type: 'SET_CONNECTION'; payload: { isConnected: boolean; error?: string } }
   | { type: 'UPDATE_PLAYER_SCORE'; payload: number }
+  | { type: 'SET_ROOM_CODE'; payload: string }
+  | { type: 'SET_QUIZ_TITLE'; payload: string }
+  | { type: 'SET_HOST_NAME'; payload: string }
+  | { type: 'SET_CURRENT_QUESTION'; payload: any }
+  | { type: 'UPDATE_PARTICIPANTS'; payload: { count: number; participants: Array<{ playerId: string; name: string; score: number; isConnected: boolean; isReady: boolean }> } }
   | { type: 'RESET_QUIZ' };
 
 const initialState: QuizState = {
@@ -50,6 +70,13 @@ const initialState: QuizState = {
   isHost: false,
   isConnected: false,
   connectionError: null,
+  // Room management fields
+  roomCode: null,
+  quizTitle: null,
+  hostName: null,
+  participantCount: 0,
+  participants: [],
+  currentQuestion: null,
 };
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
@@ -82,6 +109,25 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
           score: action.payload
         } : null
       };
+    case 'SET_ROOM_CODE':
+      console.log('🎮 Reducer: SET_ROOM_CODE', action.payload);
+      return { ...state, roomCode: action.payload };
+    case 'SET_QUIZ_TITLE':
+      console.log('🎮 Reducer: SET_QUIZ_TITLE', action.payload);
+      return { ...state, quizTitle: action.payload };
+    case 'SET_HOST_NAME':
+      console.log('🎮 Reducer: SET_HOST_NAME', action.payload);
+      return { ...state, hostName: action.payload };
+    case 'SET_CURRENT_QUESTION':
+      console.log('🎮 Reducer: SET_CURRENT_QUESTION', action.payload);
+      return { ...state, currentQuestion: action.payload };
+    case 'UPDATE_PARTICIPANTS':
+      console.log('🎮 Reducer: UPDATE_PARTICIPANTS', action.payload);
+      return { 
+        ...state, 
+        participantCount: action.payload.count,
+        participants: action.payload.participants
+      };
     case 'RESET_QUIZ':
       return initialState;
     default:
@@ -104,44 +150,110 @@ const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
 export function QuizProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(quizReducer, initialState);
+  const router = useRouter();
   
-  console.log('🎮 QuizProvider initialized');
+  // Only log initialization once
+  const isInitialized = useRef(false);
+  if (!isInitialized.current) {
+    console.log('🎮 QuizProvider initialized');
+    isInitialized.current = true;
+  }
 
   // WebSocket connection
-  const websocket = useQuizWebSocket(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000', {
+  const websocket = useQuizWebSocket(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3002', {
     onRoomCreated: useCallback((data: RoomCreatedData) => {
-      console.log('Room created:', data.roomCode);
+      console.log('🎮 Room created:', data.roomCode);
+      console.log('🎮 Setting state:', { 
+        gameState: 'waiting', 
+        roomCode: data.roomCode, 
+        isHost: true,
+        participantCount: data.participantCount,
+        participants: data.participants
+      });
+      dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
+      dispatch({ type: 'SET_ROOM_CODE', payload: data.roomCode });
+      dispatch({ type: 'SET_HOST', payload: true });
       // Store room code for future use
       if (typeof window !== 'undefined') {
         localStorage.setItem('current_room_code', data.roomCode);
       }
+      // Set participant count and list from server
+      dispatch({ 
+        type: 'UPDATE_PARTICIPANTS', 
+        payload: { 
+          count: data.participantCount,
+          participants: data.participants
+        } 
+      });
     }, []),
 
     onRoomJoined: useCallback((data: RoomJoinedData) => {
       console.log('Room joined:', data);
       dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
+      dispatch({ type: 'SET_ROOM_CODE', payload: data.roomCode });
+      dispatch({ type: 'SET_QUIZ_TITLE', payload: data.quizTitle });
+      // Find host name from participants (first participant is usually the host)
+      const hostParticipant = data.participants.find(p => p.playerId === data.participants[0]?.playerId);
+      if (hostParticipant) {
+        dispatch({ type: 'SET_HOST_NAME', payload: hostParticipant.name });
+      }
+      dispatch({ 
+        type: 'UPDATE_PARTICIPANTS', 
+        payload: { 
+          count: data.participantCount,
+          participants: data.participants
+        } 
+      });
     }, []),
+
+    onRoomCancelled: useCallback((data: RoomCancelledData) => {
+      console.log('🎮 Room cancelled event received:', data);
+      // Reset quiz state and show alert
+      dispatch({ type: 'RESET_QUIZ' });
+      // Show alert to user
+      alert(data.message);
+      // Redirect to home page
+      router.push('/');
+    }, [router]),
 
     onParticipantJoined: useCallback((data: ParticipantJoinedData) => {
       console.log('Participant joined:', data);
-      // Update participant count in UI
+      // Update participant count and list
+      dispatch({ 
+        type: 'UPDATE_PARTICIPANTS', 
+        payload: { 
+          count: data.participantCount,
+          participants: data.participants
+        } 
+      });
     }, []),
 
     onParticipantLeft: useCallback((data: ParticipantLeftData) => {
       console.log('Participant left:', data);
-      // Update participant count in UI
+      // Update participant count and list
+      dispatch({ 
+        type: 'UPDATE_PARTICIPANTS', 
+        payload: { 
+          count: data.participantCount,
+          participants: data.participants
+        } 
+      });
     }, []),
 
     onQuizStarted: useCallback((data: QuizStartedData) => {
       console.log('Quiz started:', data);
       dispatch({ type: 'SET_GAME_STATE', payload: 'question' });
+      dispatch({ type: 'SET_CURRENT_QUESTION', payload: data.question });
       dispatch({ type: 'UPDATE_TIME', payload: data.question.timeRemaining / 1000 }); // Convert to seconds
+      dispatch({ type: 'UPDATE_LEADERBOARD', payload: data.leaderboard });
     }, []),
 
     onNextQuestion: useCallback((data: NextQuestionData) => {
       console.log('Next question:', data);
       dispatch({ type: 'SET_GAME_STATE', payload: 'question' });
+      dispatch({ type: 'SET_CURRENT_QUESTION', payload: data.question });
       dispatch({ type: 'UPDATE_TIME', payload: data.question.timeRemaining / 1000 }); // Convert to seconds
+      dispatch({ type: 'UPDATE_LEADERBOARD', payload: data.leaderboard });
     }, []),
 
     onQuizCompleted: useCallback((data: QuizCompletedData) => {
@@ -165,8 +277,18 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
 
     onError: useCallback((data: ErrorData) => {
       console.error('WebSocket error:', data);
+      
+      // If room not found error, it might mean the room was cancelled
+      if (data.message === 'Room not found') {
+        console.log('Room not found - likely cancelled by host');
+        dispatch({ type: 'RESET_QUIZ' });
+        alert('The quiz room has been cancelled by the host.');
+        router.push('/');
+        return;
+      }
+      
       dispatch({ type: 'SET_CONNECTION', payload: { isConnected: false, error: data.message } });
-    }, []),
+    }, [router]),
   });
 
   // Update connection state
@@ -174,6 +296,23 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     console.log('🔌 WebSocket connection state changed:', websocket.isConnected, websocket.connectionState, websocket.error);
     dispatch({ type: 'SET_CONNECTION', payload: { isConnected: websocket.isConnected, error: websocket.error || undefined } });
   }, [websocket.isConnected, websocket.connectionState, websocket.error]);
+
+  // Room status check interval
+  useEffect(() => {
+    if (!state.roomCode || !state.isConnected) return;
+
+    const checkRoomStatus = () => {
+      if (websocket.isConnected && state.roomCode) {
+        console.log('🔍 Checking room status for:', state.roomCode);
+        websocket.checkRoomStatus({ roomCode: state.roomCode });
+      }
+    };
+
+    // Check room status every 5 seconds
+    const interval = setInterval(checkRoomStatus, 5000);
+
+    return () => clearInterval(interval);
+  }, [state.roomCode, state.isConnected, websocket]);
 
   // Timer effect
   useEffect(() => {

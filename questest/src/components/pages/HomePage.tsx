@@ -10,9 +10,13 @@ import * as Typography from '@/components/ui/Typography';
 export function HomePage() {
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [showQuizRoom, setShowQuizRoom] = useState(false);
+  const [autoCreateRoom, setAutoCreateRoom] = useState(false);
+  const [hostName, setHostName] = useState('');
 
   const handleJoinQuiz = (quizId: string) => {
     setSelectedQuizId(quizId);
+    setAutoCreateRoom(true);
+    setHostName('Host'); // Default host name, có thể lấy từ user context sau này
     setShowQuizRoom(true);
   };
 
@@ -24,6 +28,8 @@ export function HomePage() {
   const handleBackToHome = () => {
     setShowQuizRoom(false);
     setSelectedQuizId(null);
+    setAutoCreateRoom(false);
+    setHostName('');
   };
 
   if (showQuizRoom && selectedQuizId) {
@@ -41,7 +47,11 @@ export function HomePage() {
               Back to Quiz List
             </button>
           </div>
-          <QuizWaitingRoom quizId={selectedQuizId} />
+          <QuizWaitingRoom 
+            quizId={selectedQuizId} 
+            autoCreateRoom={autoCreateRoom}
+            hostName={hostName}
+          />
         </div>
       </QuizProvider>
     );

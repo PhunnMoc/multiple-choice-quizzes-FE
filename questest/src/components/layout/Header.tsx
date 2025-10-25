@@ -22,8 +22,8 @@ export function Header() {
 
   const handleJoinQuiz = () => {
     if (quizCode.trim()) {
-      // TODO: Implement join quiz by code functionality
-      console.log('Joining quiz with code:', quizCode);
+      // Navigate to join page with room code
+      router.push(`/join?code=${encodeURIComponent(quizCode.trim())}`);
     }
   };
 

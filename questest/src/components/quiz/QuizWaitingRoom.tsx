@@ -1,18 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuiz } from '@/context/QuizContext';
+import { useClipboard } from '@/hooks/useClipboard';
+import { QuestionCard } from './QuestionCard';
 
 interface QuizWaitingRoomProps {
   quizId: string;
+  autoCreateRoom?: boolean;
+  hostName?: string;
+  roomCode?: string;
+  playerName?: string;
+  isJoining?: boolean;
 }
 
-export function QuizWaitingRoom({ quizId }: QuizWaitingRoomProps) {
+export function QuizWaitingRoom({ 
+  quizId, 
+  autoCreateRoom = false, 
+  hostName = '', 
+  roomCode: propRoomCode = '', 
+  playerName: propPlayerName = '', 
+  isJoining = false 
+}: QuizWaitingRoomProps) {
   const { state, joinQuiz, createQuiz, startQuiz } = useQuiz();
-  const [playerName, setPlayerName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const { copyToClipboard, isCopied, error: clipboardError } = useClipboard();
+  const [playerName, setPlayerName] = useState(hostName || propPlayerName || '');
+  const [roomCode, setRoomCode] = useState(propRoomCode || '');
   const [hasJoined, setHasJoined] = useState(false);
-  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
+  const [isCreatingQuiz, setIsCreatingQuiz] = useState(autoCreateRoom);
+  const [isAnswered, setIsAnswered] = useState(false);
+
+  // Auto-create room when autoCreateRoom is true and we have a host name
+  useEffect(() => {
+    if (autoCreateRoom && hostName && state.isConnected && !hasJoined) {
+      console.log('🎮 Auto-creating room with host name:', hostName);
+      createQuiz(quizId);
+      setHasJoined(true);
+    }
+  }, [autoCreateRoom, hostName, state.isConnected, hasJoined, createQuiz, quizId]);
+
+  // Auto-join room when joining with room code and player name
+  useEffect(() => {
+    if (isJoining && propRoomCode && propPlayerName && state.isConnected && !hasJoined) {
+      console.log('🎮 Auto-joining room with code:', propRoomCode, 'and player:', propPlayerName);
+      joinQuiz(propRoomCode, propPlayerName);
+      setHasJoined(true);
+    }
+  }, [isJoining, propRoomCode, propPlayerName, state.isConnected, hasJoined, joinQuiz]);
+
+  // Debug log current state only when it changes
+  const prevState = useRef<any>(null);
+  useEffect(() => {
+    const currentState = {
+      roomCode: state.roomCode,
+      participantCount: state.participantCount,
+      participants: state.participants,
+      isHost: state.isHost,
+      isConnected: state.isConnected,
+      autoCreateRoom,
+      hostName
+    };
+    
+    if (JSON.stringify(prevState.current) !== JSON.stringify(currentState)) {
+      console.log('🎮 QuizWaitingRoom state changed:', currentState);
+      prevState.current = currentState;
+    }
+  }, [state.roomCode, state.participantCount, state.participants, state.isHost, state.isConnected, autoCreateRoom, hostName]);
 
   const handleJoinQuiz = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +88,74 @@ export function QuizWaitingRoom({ quizId }: QuizWaitingRoomProps) {
     startQuiz();
   };
 
-  if (!hasJoined) {
+  const handleAnswerSubmit = (answerIndex: number) => {
+    if (state.roomCode && state.socket) {
+      state.socket.emit('submit-answer', {
+        roomCode: state.roomCode,
+        answer: answerIndex
+      });
+    }
+  };
+
+  // Show question card when quiz is active
+  console.log('🎮 QuizWaitingRoom render check:', {
+    gameState: state.gameState,
+    currentQuestion: state.currentQuestion,
+    shouldShowQuestion: state.gameState === 'question' && state.currentQuestion
+  });
+  
+  if (state.gameState === 'question' && state.currentQuestion) {
+    return (
+      <QuestionCard
+        question={state.currentQuestion}
+        onAnswerSubmit={handleAnswerSubmit}
+        isAnswered={isAnswered}
+      />
+    );
+  }
+
+  // Show loading state when auto-creating room
+  if (autoCreateRoom && !hasJoined) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              🎮 Creating Quiz Room
+            </h1>
+            <p className="text-gray-600">
+              Setting up your quiz room...
+            </p>
+            
+            {/* Connection Status */}
+            <div className="mt-4 flex items-center justify-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                state.isConnected ? 'bg-green-500' : 'bg-red-500'
+              }`} />
+              <span className={`text-sm font-medium ${
+                state.isConnected ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {state.isConnected ? 'Connected' : 'Connecting...'}
+              </span>
+            </div>
+            
+            {state.connectionError && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{state.connectionError}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Please wait while we create your quiz room...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasJoined && !autoCreateRoom) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
@@ -176,63 +296,160 @@ export function QuizWaitingRoom({ quizId }: QuizWaitingRoomProps) {
         </div>
 
         <div className="space-y-6">
-          {/* Quiz Info */}
+          {/* Room Info */}
           <div className="bg-gray-50 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              {state.quiz?.title}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {state.quiz?.description}
-            </p>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>Questions: {state.quiz?.questions.length}</span>
-              <span>Players: {state.quiz?.players.length}</span>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  {state.quizTitle || state.quiz?.title || 'Quiz Room'}
+                </h2>
+                {state.hostName && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Hosted by <span className="font-semibold text-blue-600">{state.hostName}</span>
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  state.isConnected ? 'bg-green-500' : 'bg-red-500'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  state.isConnected ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {state.isConnected ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-white rounded-lg p-3">
+                <div className="text-gray-500 mb-1">Room Code</div>
+                <div className="font-bold text-lg text-blue-600">
+                  {state.roomCode || 'N/A'}
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-3">
+                <div className="text-gray-500 mb-1">Participants</div>
+                <div className="font-bold text-lg text-green-600">
+                  {state.participantCount || 0}
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-500">
+              <span>Questions: {state.quiz?.questions?.length || 0}</span>
+              <span>Max Players: 50</span>
             </div>
           </div>
 
-          {/* Players List */}
+          {/* Participants List */}
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Players ({state.quiz?.players.length || 0})
+              Participants ({state.participantCount || 0})
             </h3>
             <div className="space-y-2">
-              {state.quiz?.players.map((player) => (
-                <div
-                  key={player.id}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    player.id === state.currentPlayer?.id 
-                      ? 'bg-blue-100 border-2 border-blue-300' 
-                      : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${player.isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className="font-medium">
-                      {player.name}
-                      {player.id === state.currentPlayer?.id && ' (You)'}
-                    </span>
+              {state.participants && state.participants.length > 0 ? (
+                state.participants.map((participant) => (
+                  <div
+                    key={participant.playerId}
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      participant.playerId === state.currentPlayer?.playerId 
+                        ? 'bg-blue-100 border-2 border-blue-300' 
+                        : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        participant.isConnected !== false ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      <span className="font-medium">
+                        {participant.name}
+                        {participant.playerId === state.currentPlayer?.playerId && ' (You)'}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">
+                        {participant.score || 0} pts
+                      </span>
+                      {participant.isReady && (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                          Ready
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {player.score} pts
-                  </span>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <div className="text-4xl mb-2">👥</div>
+                  <p>No participants yet</p>
+                  <p className="text-sm">Share the room code to invite others!</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
+
+          {/* Room Code Display */}
+          {state.roomCode && (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                📋 Room Code
+              </h3>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2 font-mono tracking-wider">
+                  {state.roomCode}
+                </div>
+                <p className="text-sm text-blue-600 mb-4">
+                  Share this code with others to join your quiz
+                </p>
+                <button
+                  onClick={() => {
+                    if (state.roomCode) {
+                      copyToClipboard(state.roomCode);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg transition-colors text-sm ${
+                    isCopied 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {isCopied ? '✅ Copied!' : '📋 Copy Code'}
+                </button>
+                {clipboardError && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Copy failed: {clipboardError}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Start Button (for host) */}
           {state.isHost && (
             <button
               onClick={handleStartQuiz}
-              className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:from-green-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+              disabled={!state.participantCount || state.participantCount < 1}
+              className={`w-full font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                !state.participantCount || state.participantCount < 1
+                  ? 'bg-gray-400 cursor-not-allowed text-gray-600'
+                  : 'bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white'
+              }`}
             >
-              Start Quiz
+              {!state.participantCount || state.participantCount < 1
+                ? 'Waiting for participants...'
+                : `Start Quiz (${state.participantCount} participants)`
+              }
             </button>
           )}
 
           {!state.isHost && (
             <div className="text-center text-gray-500">
-              Waiting for host to start the quiz...
+              <div className="text-2xl mb-2">⏳</div>
+              <p>Waiting for host to start the quiz...</p>
+              <p className="text-sm mt-1">
+                {state.participantCount || 0} participant{state.participantCount !== 1 ? 's' : ''} ready
+              </p>
             </div>
           )}
         </div>

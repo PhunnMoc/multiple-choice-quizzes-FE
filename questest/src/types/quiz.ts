@@ -6,6 +6,8 @@ export interface Question {
   points?: number; // optional
 }
 
+// Note: Backend uses simple string array for options, not AnswerOption objects
+// This interface is kept for potential future use or other components
 export interface AnswerOption {
   id: string;
   text: string;
@@ -14,6 +16,7 @@ export interface AnswerOption {
 
 export interface Player {
   id: string;
+  playerId?: string; // For compatibility with backend
   name: string;
   score: number;
   isConnected: boolean;

@@ -7,11 +7,14 @@ import {
   ServerToClientEvents,
   CreateRoomData,
   JoinRoomData,
+  CheckRoomStatusData,
   SubmitAnswerData,
   StartQuizData,
   NextQuizData,
   RoomCreatedData,
   RoomJoinedData,
+  RoomCancelledData,
+  RoomStatusData,
   ParticipantJoinedData,
   ParticipantLeftData,
   QuizStartedData,
@@ -25,6 +28,8 @@ import { Quiz, Player, Question, QuizAnswer } from '@/types/quiz';
 interface UseQuizWebSocketProps {
   onRoomCreated?: (data: RoomCreatedData) => void;
   onRoomJoined?: (data: RoomJoinedData) => void;
+  onRoomCancelled?: (data: RoomCancelledData) => void;
+  onRoomStatus?: (data: RoomStatusData) => void;
   onParticipantJoined?: (data: ParticipantJoinedData) => void;
   onParticipantLeft?: (data: ParticipantLeftData) => void;
   onQuizStarted?: (data: QuizStartedData) => void;
@@ -45,6 +50,7 @@ interface UseQuizWebSocketReturn {
   // Room actions
   createRoom: (data: CreateRoomData) => void;
   joinRoom: (data: JoinRoomData) => void;
+  checkRoomStatus: (data: CheckRoomStatusData) => void;
   
   // Game actions
   startQuiz: (data: StartQuizData) => void;
@@ -53,7 +59,7 @@ interface UseQuizWebSocketReturn {
 }
 
 export function useQuizWebSocket(
-  serverUrl: string = 'http://localhost:3000', // Backend runs on port 3000
+  serverUrl: string = 'http://localhost:3002', // Backend runs on port 3002
   callbacks: UseQuizWebSocketProps = {}
 ): UseQuizWebSocketReturn {
   const { socket, isConnected, connectionState, error, connect, disconnect } = useWebSocket({
@@ -82,6 +88,16 @@ export function useQuizWebSocket(
     const handleRoomJoined = (data: RoomJoinedData) => {
       console.log('Room joined:', data);
       callbacksRef.current.onRoomJoined?.(data);
+    };
+
+    const handleRoomCancelled = (data: RoomCancelledData) => {
+      console.log('🎮 WebSocket: Room cancelled event received:', data);
+      callbacksRef.current.onRoomCancelled?.(data);
+    };
+
+    const handleRoomStatus = (data: RoomStatusData) => {
+      console.log('🎮 WebSocket: Room status received:', data);
+      callbacksRef.current.onRoomStatus?.(data);
     };
 
     const handleParticipantJoined = (data: ParticipantJoinedData) => {
@@ -122,6 +138,8 @@ export function useQuizWebSocket(
     // Register all event listeners
     socket.on('room-created', handleRoomCreated);
     socket.on('room-joined', handleRoomJoined);
+    socket.on('room-cancelled', handleRoomCancelled);
+    socket.on('room-status', handleRoomStatus);
     socket.on('participant-joined', handleParticipantJoined);
     socket.on('participant-left', handleParticipantLeft);
     socket.on('quiz-started', handleQuizStarted);
@@ -134,6 +152,8 @@ export function useQuizWebSocket(
     return () => {
       socket.off('room-created', handleRoomCreated);
       socket.off('room-joined', handleRoomJoined);
+      socket.off('room-cancelled', handleRoomCancelled);
+      socket.off('room-status', handleRoomStatus);
       socket.off('participant-joined', handleParticipantJoined);
       socket.off('participant-left', handleParticipantLeft);
       socket.off('quiz-started', handleQuizStarted);
@@ -158,6 +178,14 @@ export function useQuizWebSocket(
       socket.emit('join-room', data);
     } else {
       console.error('Cannot join room: WebSocket not connected');
+    }
+  }, [socket, isConnected]);
+
+  const checkRoomStatus = useCallback((data: CheckRoomStatusData) => {
+    if (socket && isConnected) {
+      socket.emit('check-room-status', data);
+    } else {
+      console.error('Cannot check room status: WebSocket not connected');
     }
   }, [socket, isConnected]);
 
@@ -197,6 +225,7 @@ export function useQuizWebSocket(
     // Room actions
     createRoom,
     joinRoom,
+    checkRoomStatus,
     
     // Game actions
     startQuiz,
