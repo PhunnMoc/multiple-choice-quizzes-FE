@@ -263,8 +263,6 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     }, []),
 
     onQuizCompleted: useCallback((data: QuizCompletedData) => {
-      console.log('🎉 Quiz completed event received:', data);
-      console.log('🎉 Quiz results:', data.results);
       dispatch({ type: 'SET_GAME_STATE', payload: 'finished' });
       dispatch({ type: 'SET_QUIZ_RESULTS', payload: data.results });
       // Update leaderboard with final results
@@ -275,7 +273,6 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
         isConnected: true
       }));
       dispatch({ type: 'UPDATE_LEADERBOARD', payload: players });
-      console.log('🎉 Quiz state updated to finished');
     }, []),
 
     onAnswerSubmitted: useCallback((data: AnswerSubmittedData) => {
@@ -364,11 +361,6 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       console.error('No room code found in state');
       return;
     }
-
-    console.log('📤 Submitting answer via context:', {
-      answerIndex: answerIndex,
-      roomCode: state.roomCode
-    });
 
     websocket.submitAnswer({
       roomCode: state.roomCode,

@@ -199,32 +199,10 @@ export function useQuizWebSocket(
   }, [socket, isConnected]);
 
   const submitAnswer = useCallback((data: SubmitAnswerData) => {
-    console.log('🔌 WebSocket submitAnswer called:', {
-      data: data,
-      socket: socket ? 'exists' : 'null',
-      isConnected: isConnected,
-      socketId: socket?.id || 'no-id',
-      socketConnected: socket?.connected || false
-    });
-    
     if (socket && isConnected) {
-      console.log('🔌 About to emit submit-answer event...');
       socket.emit('submit-answer', data);
-      console.log('🔌 Submit-answer event emitted via WebSocket');
-      
-      // Test if event was sent
-      setTimeout(() => {
-        console.log('🔌 Event sent, checking connection:', {
-          socketConnected: socket?.connected,
-          socketId: socket?.id
-        });
-      }, 100);
     } else {
-      console.error('🔌 Cannot submit answer: WebSocket not connected', {
-        socket: socket ? 'exists' : 'null',
-        isConnected: isConnected,
-        socketConnected: socket?.connected || false
-      });
+      console.error('Cannot submit answer: WebSocket not connected');
     }
   }, [socket, isConnected]);
 

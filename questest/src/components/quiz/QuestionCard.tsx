@@ -51,11 +51,11 @@ export function QuestionCard({ question, onAnswerSubmit, isAnswered }: QuestionC
   const handleAnswerClick = (answerIndex: number) => {
     if (isAnswered) return;
     
-    console.log('🎯 Answer clicked:', {
+    console.log(`🎯 QuestionCard: Answer clicked for question ${question.questionIndex}:`, {
       answerIndex: answerIndex,
-      questionIndex: question.questionIndex,
       questionText: question.questionText,
-      options: question.options
+      options: question.options,
+      isAnswered: isAnswered
     });
     
     setSelectedAnswer(answerIndex);

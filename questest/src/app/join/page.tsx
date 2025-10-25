@@ -44,17 +44,6 @@ export default function JoinQuizPage() {
     return (
       <QuizProvider>
         <div className="min-h-screen">
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <button
-              onClick={handleBackToHome}
-              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Home
-            </button>
-          </div>
           <QuizWaitingRoom 
             quizId="" // We don't have quizId when joining by code
             roomCode={roomCode}
@@ -67,11 +56,11 @@ export default function JoinQuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🎯 Join Quiz Room
+            Join Quiz Room
           </h1>
           <p className="text-gray-600">
             Enter the quiz code to join an existing room
@@ -99,7 +88,7 @@ export default function JoinQuizPage() {
 
           <div>
             <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
-              Your Name
+              Display Name
             </label>
             <input
               type="text"

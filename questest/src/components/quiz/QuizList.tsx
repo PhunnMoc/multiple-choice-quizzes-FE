@@ -7,11 +7,10 @@ import { Quiz } from '@/types/quiz';
 import { SearchBar } from '@/components/ui/SearchBar';
 
 interface QuizListProps {
-  onJoinQuiz: (quizId: string) => void;
   onViewDetails: (quizId: string) => void;
 }
 
-export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
+export function QuizList({ onViewDetails }: QuizListProps) {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +139,6 @@ export function QuizList({ onJoinQuiz, onViewDetails }: QuizListProps) {
             <QuizCard
               key={quiz.id}
               quiz={quiz}
-              onJoinQuiz={onJoinQuiz}
               onViewDetails={onViewDetails}
             />
           ))}

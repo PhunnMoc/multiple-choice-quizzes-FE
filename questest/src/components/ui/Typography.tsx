@@ -75,6 +75,19 @@ export function Body({ children, align = 'left', className = '' }: TypographyPro
   );
 }
 
-export default { H1, H2, H3, Subtle, Body };
+export function P({ children, align = 'left', className = '' }: TypographyProps) {
+  return (
+    <p className={[
+      'text-gray-700 text-sm',
+      'font-[Euclid_Circular_A,Helvetica_Neue,Helvetica,Arial,sans-serif]',
+      align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left',
+      className,
+    ].join(' ').trim()}>
+      {children}
+    </p>
+  );
+}
+
+export default { H1, H2, H3, Subtle, Body, P };
 
 

@@ -7,11 +7,10 @@ import { useRouter } from 'next/navigation';
 
 interface QuizCardProps {
   quiz: Quiz;
-  onJoinQuiz: (quizId: string) => void;
   onViewDetails: (quizId: string) => void;
 }
 
-export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
+export function QuizCard({ quiz, onViewDetails }: QuizCardProps) {
   const router = useRouter();
   
   const formatDate = (dateString: string) => {
@@ -24,7 +23,11 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
   };
 
   const handleViewDetails = () => {
-    router.push(`/edit/${quiz.id}`);
+    onViewDetails(quiz.id);
+  };
+
+  const handleStartQuizRoom = () => {
+    router.push(`/quiz-room/${quiz.id}`);
   };
 
   return (
@@ -75,7 +78,7 @@ export function QuizCard({ quiz, onJoinQuiz, onViewDetails }: QuizCardProps) {
           <Button
             variant="primary"
             size="full"
-            onClick={() => onJoinQuiz(quiz.id)}
+            onClick={handleStartQuizRoom}
             className="flex-1"
           >
             Start Quiz Room

@@ -5,6 +5,7 @@ import { useQuiz } from '@/context/QuizContext';
 import { useClipboard } from '@/hooks/useClipboard';
 import { QuestionCard } from './QuestionCard';
 import { QuizResults } from './QuizResults';
+import Button from '../ui/Button';
 
 interface QuizWaitingRoomProps {
   quizId: string;
@@ -90,32 +91,22 @@ export function QuizWaitingRoom({
   };
 
   const handleAnswerSubmit = (answerIndex: number) => {
-    console.log('📤 Submitting answer:', {
-      answerIndex: answerIndex,
-      roomCode: state.roomCode,
-      isConnected: state.isConnected,
-      gameState: state.gameState
-    });
-    
     if (state.roomCode && state.isConnected) {
-      console.log('📤 Calling submitAnswer from context...');
-      submitAnswer(answerIndex);
-      console.log('📤 Submit-answer called via context');
-    } else {
-      console.error('📤 Cannot submit answer - missing roomCode or not connected:', {
+      console.log(`📤 QuizWaitingRoom: Submitting answer for question ${state.currentQuestion?.questionIndex}:`, {
+        answerIndex: answerIndex,
         roomCode: state.roomCode,
-        isConnected: state.isConnected
+        isConnected: state.isConnected,
+        gameState: state.gameState,
+        currentQuestion: state.currentQuestion
       });
+      
+      submitAnswer(answerIndex);
+    } else {
+      console.error('Cannot submit answer - missing roomCode or not connected');
     }
   };
 
   // Show question card when quiz is active
-  console.log('🎮 QuizWaitingRoom render check:', {
-    gameState: state.gameState,
-    currentQuestion: state.currentQuestion,
-    shouldShowQuestion: state.gameState === 'question' && state.currentQuestion
-  });
-  
   if (state.gameState === 'question' && state.currentQuestion) {
     return (
       <QuestionCard
@@ -128,10 +119,6 @@ export function QuizWaitingRoom({
 
   // Show quiz results when quiz is finished
   if (state.gameState === 'finished' && state.quizResults) {
-    console.log('🎉 Showing QuizResults:', {
-      gameState: state.gameState,
-      quizResults: state.quizResults
-    });
     return (
       <QuizResults
         results={state.quizResults}
@@ -313,11 +300,11 @@ export function QuizWaitingRoom({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🎮 Quiz Room
+            Quiz Room
           </h1>
           <p className="text-gray-600">
             Waiting for the quiz to start...
@@ -351,8 +338,27 @@ export function QuizWaitingRoom({
             </div>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-white rounded-lg p-3">
-                <div className="text-gray-500 mb-1">Room Code</div>
+              <div className="bg-white rounded-lg p-3 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 mb-1">Room Code</span>
+                  {/* Copy Icon */}
+                  <button
+                    onClick={() => {
+                      if (state.roomCode) {
+                        navigator.clipboard.writeText(state.roomCode);
+                      }
+                    }}
+                    title="Copy room code"
+                    className="ml-2 p-1 rounded hover:bg-blue-100 transition"
+                    type="button"
+                  >
+                    {/* Simple copy SVG icon */}
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-blue-600">
+                      <rect x="8" y="8" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                      <rect x="4" y="4" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    </svg>
+                  </button>
+                </div>
                 <div className="font-bold text-lg text-blue-600">
                   {state.roomCode || 'N/A'}
                 </div>
@@ -391,7 +397,7 @@ export function QuizWaitingRoom({
                       <div className={`w-3 h-3 rounded-full ${
                         participant.isConnected !== false ? 'bg-green-500' : 'bg-red-500'
                       }`} />
-                      <span className="font-medium">
+                      <span className="font-medium text-black">
                         {participant.name}
                         {participant.playerId === state.currentPlayer?.playerId && ' (You)'}
                       </span>
@@ -418,67 +424,24 @@ export function QuizWaitingRoom({
             </div>
           </div>
 
-          {/* Room Code Display */}
-          {state.roomCode && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                📋 Room Code
-              </h3>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2 font-mono tracking-wider">
-                  {state.roomCode}
-                </div>
-                <p className="text-sm text-blue-600 mb-4">
-                  Share this code with others to join your quiz
-                </p>
-                <button
-                  onClick={() => {
-                    if (state.roomCode) {
-                      copyToClipboard(state.roomCode);
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg transition-colors text-sm ${
-                    isCopied 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  {isCopied ? '✅ Copied!' : '📋 Copy Code'}
-                </button>
-                {clipboardError && (
-                  <p className="text-xs text-red-500 mt-1">
-                    Copy failed: {clipboardError}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Start Button (for host) */}
           {state.isHost && (
-            <button
+            <Button
+              variant="primary"
+              size="full"
               onClick={handleStartQuiz}
               disabled={!state.participantCount || state.participantCount < 1}
-              className={`w-full font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 ${
-                !state.participantCount || state.participantCount < 1
-                  ? 'bg-gray-400 cursor-not-allowed text-gray-600'
-                  : 'bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white'
-              }`}
             >
               {!state.participantCount || state.participantCount < 1
                 ? 'Waiting for participants...'
                 : `Start Quiz (${state.participantCount} participants)`
               }
-            </button>
+            </Button>
           )}
 
           {!state.isHost && (
             <div className="text-center text-gray-500">
-              <div className="text-2xl mb-2">⏳</div>
               <p>Waiting for host to start the quiz...</p>
-              <p className="text-sm mt-1">
-                {state.participantCount || 0} participant{state.participantCount !== 1 ? 's' : ''} ready
-              </p>
             </div>
           )}
         </div>

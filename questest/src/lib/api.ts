@@ -1,5 +1,36 @@
 import { Quiz, ApiResponse } from '@/types/quiz';
 
+export interface QuizHistory {
+  _id: string;
+  roomCode: string;
+  quizId: string;
+  quizTitle: string;
+  hostId: string;
+  hostName: string;
+  participants: Array<{
+    playerId: string;
+    name: string;
+    score: number;
+    totalQuestions: number;
+    answers: Array<{
+      questionIndex: number;
+      answerIndex: number;
+      isCorrect: boolean;
+      timeSpent: number;
+      submittedAt: string;
+    }>;
+  }>;
+  questions: Array<{
+    questionIndex: number;
+    questionText: string;
+    options: string[];
+    correctAnswerIndex: number;
+  }>;
+  completionTime: string;
+  duration: number;
+  createdAt: string;
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 class ApiService {
@@ -103,6 +134,28 @@ class ApiService {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(quizData),
+    });
+
+    return response.json();
+  }
+
+  /**
+   * Get quiz history for a user
+   */
+  async getQuizHistory(playerId: string): Promise<ApiResponse<QuizHistory[]>> {
+    const response = await fetch(`${API_BASE_URL}/api/quiz-history/${playerId}`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    return response.json();
+  }
+
+  /**
+   * Get specific quiz history by room code
+   */
+  async getQuizHistoryByRoomCode(roomCode: string): Promise<ApiResponse<QuizHistory>> {
+    const response = await fetch(`${API_BASE_URL}/api/quiz-history/room/${roomCode}`, {
+      headers: this.getAuthHeaders(),
     });
 
     return response.json();
