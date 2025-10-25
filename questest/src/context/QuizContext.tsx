@@ -41,6 +41,7 @@ interface QuizState {
     isReady: boolean;
   }>;
   currentQuestion: any | null;
+  quizResults: any | null;
 }
 
 type QuizAction =
@@ -57,6 +58,7 @@ type QuizAction =
   | { type: 'SET_QUIZ_TITLE'; payload: string }
   | { type: 'SET_HOST_NAME'; payload: string }
   | { type: 'SET_CURRENT_QUESTION'; payload: any }
+  | { type: 'SET_QUIZ_RESULTS'; payload: any }
   | { type: 'UPDATE_PARTICIPANTS'; payload: { count: number; participants: Array<{ playerId: string; name: string; score: number; isConnected: boolean; isReady: boolean }> } }
   | { type: 'RESET_QUIZ' };
 
@@ -77,6 +79,7 @@ const initialState: QuizState = {
   participantCount: 0,
   participants: [],
   currentQuestion: null,
+  quizResults: null,
 };
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
@@ -121,6 +124,9 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
     case 'SET_CURRENT_QUESTION':
       console.log('🎮 Reducer: SET_CURRENT_QUESTION', action.payload);
       return { ...state, currentQuestion: action.payload };
+    case 'SET_QUIZ_RESULTS':
+      console.log('🎮 Reducer: SET_QUIZ_RESULTS', action.payload);
+      return { ...state, quizResults: action.payload };
     case 'UPDATE_PARTICIPANTS':
       console.log('🎮 Reducer: UPDATE_PARTICIPANTS', action.payload);
       return { 
@@ -257,8 +263,10 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     }, []),
 
     onQuizCompleted: useCallback((data: QuizCompletedData) => {
-      console.log('Quiz completed:', data);
+      console.log('🎉 Quiz completed event received:', data);
+      console.log('🎉 Quiz results:', data.results);
       dispatch({ type: 'SET_GAME_STATE', payload: 'finished' });
+      dispatch({ type: 'SET_QUIZ_RESULTS', payload: data.results });
       // Update leaderboard with final results
       const players = data.results.participants.map(p => ({
         id: p.name, // Use name as ID for now
@@ -267,6 +275,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
         isConnected: true
       }));
       dispatch({ type: 'UPDATE_LEADERBOARD', payload: players });
+      console.log('🎉 Quiz state updated to finished');
     }, []),
 
     onAnswerSubmitted: useCallback((data: AnswerSubmittedData) => {
@@ -351,17 +360,21 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   const submitAnswer = useCallback((answerIndex: number) => {
     if (!websocket.isConnected) return;
 
-    const roomCode = typeof window !== 'undefined' ? localStorage.getItem('current_room_code') : null;
-    if (!roomCode) {
-      console.error('No room code found');
+    if (!state.roomCode) {
+      console.error('No room code found in state');
       return;
     }
 
+    console.log('📤 Submitting answer via context:', {
+      answerIndex: answerIndex,
+      roomCode: state.roomCode
+    });
+
     websocket.submitAnswer({
-      roomCode,
+      roomCode: state.roomCode,
       answer: answerIndex,
     });
-  }, [websocket]);
+  }, [websocket, state.roomCode]);
 
   const startQuiz = useCallback(() => {
     if (!websocket.isConnected) return;

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuiz } from '@/context/QuizContext';
 import { useClipboard } from '@/hooks/useClipboard';
 import { QuestionCard } from './QuestionCard';
+import { QuizResults } from './QuizResults';
 
 interface QuizWaitingRoomProps {
   quizId: string;
@@ -22,7 +23,7 @@ export function QuizWaitingRoom({
   playerName: propPlayerName = '', 
   isJoining = false 
 }: QuizWaitingRoomProps) {
-  const { state, joinQuiz, createQuiz, startQuiz } = useQuiz();
+  const { state, joinQuiz, createQuiz, startQuiz, submitAnswer } = useQuiz();
   const { copyToClipboard, isCopied, error: clipboardError } = useClipboard();
   const [playerName, setPlayerName] = useState(hostName || propPlayerName || '');
   const [roomCode, setRoomCode] = useState(propRoomCode || '');
@@ -89,10 +90,21 @@ export function QuizWaitingRoom({
   };
 
   const handleAnswerSubmit = (answerIndex: number) => {
-    if (state.roomCode && state.socket) {
-      state.socket.emit('submit-answer', {
+    console.log('📤 Submitting answer:', {
+      answerIndex: answerIndex,
+      roomCode: state.roomCode,
+      isConnected: state.isConnected,
+      gameState: state.gameState
+    });
+    
+    if (state.roomCode && state.isConnected) {
+      console.log('📤 Calling submitAnswer from context...');
+      submitAnswer(answerIndex);
+      console.log('📤 Submit-answer called via context');
+    } else {
+      console.error('📤 Cannot submit answer - missing roomCode or not connected:', {
         roomCode: state.roomCode,
-        answer: answerIndex
+        isConnected: state.isConnected
       });
     }
   };
@@ -110,6 +122,23 @@ export function QuizWaitingRoom({
         question={state.currentQuestion}
         onAnswerSubmit={handleAnswerSubmit}
         isAnswered={isAnswered}
+      />
+    );
+  }
+
+  // Show quiz results when quiz is finished
+  if (state.gameState === 'finished' && state.quizResults) {
+    console.log('🎉 Showing QuizResults:', {
+      gameState: state.gameState,
+      quizResults: state.quizResults
+    });
+    return (
+      <QuizResults
+        results={state.quizResults}
+        onBackToHome={() => {
+          // Reset quiz state and navigate to home
+          window.location.href = '/';
+        }}
       />
     );
   }
