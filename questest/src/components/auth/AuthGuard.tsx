@@ -13,26 +13,32 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { isAuthenticated, isLoading, refreshAuth } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     // If not loading and not authenticated, show login popup
-    if (!isLoading && !isAuthenticated) {
+    // But don't show if we're refreshing auth state
+    if (!isLoading && !isAuthenticated && !isRefreshing) {
       setShowLogin(true);
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, isRefreshing]);
 
   const handleLoginSuccess = async () => {
     setShowLogin(false);
     setShowSignup(false);
+    setIsRefreshing(true);
     // Refresh authentication state to ensure it's up to date
     await refreshAuth();
+    setIsRefreshing(false);
   };
 
   const handleSignupSuccess = async () => {
     setShowLogin(false);
     setShowSignup(false);
+    setIsRefreshing(true);
     // Refresh authentication state to ensure it's up to date
     await refreshAuth();
+    setIsRefreshing(false);
   };
 
   const openLogin = () => {
