@@ -1,14 +1,17 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { QuizList } from '@/components/quiz/QuizList';
 import { Button } from '@/components/ui/Button';
 import * as Typography from '@/components/ui/Typography';
 
 export function HomePage() {
+  const router = useRouter();
+  
   const handleViewDetails = (quizId: string) => {
-    // This will be handled by QuizCard navigation
-    console.log('View details for quiz:', quizId);
+    // Navigate to edit page
+    router.push(`/edit/${quizId}`);
   };
 
   return (
